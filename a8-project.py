@@ -63,7 +63,7 @@ td = normalize(training_data)
 print("creating NueralNet")
 nn = NeuralNet(8, 12, 1)
 
-nn.train(td[:10], iters=100, print_interval=10, learning_rate=1.0)
+nn.train(td[:10], iters=500, print_interval=10, learning_rate=0.1)
 
 for i in nn.test_with_expected(td):
     print(f"desired: {i[1]}, actual: {i[2]}")

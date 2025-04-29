@@ -1,28 +1,76 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
+from typing import Tuple
+from neural import *
 from sklearn.model_selection import train_test_split
 
-data = pd.read_csv("email_phishing_data_othermodel.csv")
-x = data[["num_words","num_unique_words","num_stopwords","num_links","num_unique_domains","num_email_addresses","num_spelling_errors","num_urgent_keywords"]].values
-y = data["label"].values
 
-xtrain, xtest, ytrain, ytest = train_test_split(x,y, test_size= .2)
+def parse_line(line: str) -> Tuple[List[float], List[float]]:
+    """Splits line of CSV into inputs and output (transormfing output as appropriate)
 
-model = LinearRegression().fit(xtrain,ytrain)
+    Args:
+        line - one line of the CSV as a string
 
-coef = np.around(model.coef_, 2)
-intecerpt = round(float(model.intercept_), 2)
-r_squared = round(model.score(x,y), 2)
+    Returns:
+        tuple of input list and output list
+    """
+    tokens = line.split(",")
+    out = int(tokens[0])
+    output = [1 if out == 1 else 0.5 if out == 2 else 0]
 
-print("The Coefficient:", coef)
-print(f"Model's Linear Equation: y= {coef[0]}x + {coef[1]}x1 + {coef[2]}x2 + {coef[3]}x3 + {coef[4]}x4 + {coef[5]}x5 + {coef[6]}x6 + {coef[7]}x7 + {intecerpt}")
-print("R Squared Value:", r_squared)
+    inpt = [float(x) for x in tokens[1:]]
+    return (inpt, output)
 
-print("***************")
-print("Testing Results")
 
-predict = model.predict(xtest)
-predict = np.around(predict, 2)
-print(predict)
+def normalize(data: List[Tuple[List[float], List[float]]]):
+    """Makes the data range for each input feature from 0 to 1
+
+    Args:
+        data - list of (input, output) tuples
+
+    Returns:
+        normalized data where input features are mapped to 0-1 range (output already
+        mapped in parse_line)
+    """
+    leasts = len(data[0][0]) * [100.0]
+    mosts = len(data[0][0]) * [0.0]
+
+    for i in range(len(data)):
+        for j in range(len(data[i][0])):
+            if data[i][0][j] < leasts[j]:
+                leasts[j] = data[i][0][j]
+            if data[i][0][j] > mosts[j]:
+                mosts[j] = data[i][0][j]
+
+    for i in range(len(data)):
+        for j in range(len(data[i][0])):
+            data[i][0][j] = (data[i][0][j] - leasts[j]) / (mosts[j] - leasts[j])
+    return data
+
+
+with open("email_phishing_data.csv", "r") as f:
+    training_data = [parse_line(line) for line in f.readlines() if len(line) > 4]
+
+train_data, test_data = train_test_split(training_data)
+
+# for line in train_data:
+#     print(line)
+
+# print(len(training_data))
+# print(len(train_data))
+# print(len(test_data))
+
+# td = normalize(training_data)
+
+print("Starting data normalization...")
+train_data_norm = normalize(train_data)
+test_data_norm = normalize(test_data)
+
+# for line in test_data_norm:
+#     print(line)
+
+print("creating NueralNet")
+nn = NeuralNet(8, 12, 1)
+nn.train(train_data_norm[:10], iters=500, print_interval=10, learning_rate=0.1)
+print("trained data")
+
+for i in nn.test_with_expected(test_data_norm):
+    print(f"desired: {i[1]}, actual: {i[2]}")
