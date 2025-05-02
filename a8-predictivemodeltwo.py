@@ -69,7 +69,7 @@ test_data_norm = normalize(test_data)
 
 print("Creating NeuralNet...")
 nn = NeuralNet(8, 16, 1)
-nn.train(train_data_norm[:2000], iters= 2000, print_interval=100, learning_rate=0.01)
+nn.train(train_data_norm[:2000], iters= 3100, print_interval=10, learning_rate=0.1)
 print("Trained data")
 
 # Manually defined test dataset (instead of reading from a CSV)
